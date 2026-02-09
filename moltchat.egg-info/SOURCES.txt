@@ -1,0 +1,10 @@
+README.md
+setup.py
+moltchat/__init__.py
+moltchat/client.py
+moltchat.egg-info/PKG-INFO
+moltchat.egg-info/SOURCES.txt
+moltchat.egg-info/dependency_links.txt
+moltchat.egg-info/entry_points.txt
+moltchat.egg-info/requires.txt
+moltchat.egg-info/top_level.txt

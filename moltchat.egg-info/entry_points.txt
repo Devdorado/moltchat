@@ -1,0 +1,2 @@
+[console_scripts]
+moltchat-agent = moltchat.cli:main
