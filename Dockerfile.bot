@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy package
+COPY moltchat/ /app/moltchat/
+COPY setup.py /app/
+COPY README.md /app/
+
+# Install
+RUN pip install -e .
+
+# Create bot script
+COPY examples/bot_runner.py /app/bot_runner.py
+
+CMD ["python", "/app/bot_runner.py"]
