@@ -360,10 +360,21 @@
             const msg = document.createElement('div');
             msg.className = 'message';
             
-            const time = new Date(data.timestamp).toLocaleTimeString();
+            // Handle timestamp
+            let timeStr = '00:00:00';
+            try {
+                if (data.timestamp) {
+                    const date = new Date(data.timestamp);
+                    if (!isNaN(date.getTime())) {
+                        timeStr = date.toLocaleTimeString();
+                    }
+                }
+            } catch (e) {
+                timeStr = '00:00:00';
+            }
             
             msg.innerHTML = `
-                <span class="timestamp">[${time}]</span>
+                <span class="timestamp">[${timeStr}]</span>
                 <span class="nick">&lt;${escapeHtml(data.nick)}&gt;</span>
                 <span class="content">${escapeHtml(data.message)}</span>
             `;
