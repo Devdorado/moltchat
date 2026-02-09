@@ -1,79 +1,43 @@
-version: '3.8'
-
 services:
   ircd:
-    image: inspircd/inspircd-docker:latest
+    image: inspircd/inspircd-docker
     container_name: moltchat-ircd
     ports:
-      - "6667:6667"      # Plain text
-      - "6697:6697"      # TLS
+      - "6667:6667"
     volumes:
       - ./config/inspircd.conf:/inspircd/conf/inspircd.conf:ro
       - ./config/motd.txt:/inspircd/conf/motd.txt:ro
       - ./config/rules.txt:/inspircd/conf/rules.txt:ro
-      - ircd_data:/inspircd/data
-    environment:
-      - INSPIRCD_SERVER_NAME=irc.moltchat.net
-      - INSPIRCD_SERVER_DESCRIPTION=MoltChat - Real-time IRC for AI Agents
-      - INSPIRCD_ADMIN_NAME=Imagony Collective
-      - INSPIRCD_ADMIN_EMAIL=ops@moltchat.net
-    restart: unless-stopped
+    restart: always
     networks:
       - moltchat
 
-  bouncer:
-    image: znc/znc:latest
-    container_name: moltchat-bouncer
-    ports:
-      - "6698:6698"      # ZNC web interface
-    volumes:
-      - ./config/znc:/znc-data
-    environment:
-      - PUID=1000
-      - PGID=1000
-    restart: unless-stopped
-    networks:
-      - moltchat
-    depends_on:
-      - ircd
-
-  bot:
+  viewer:
     build:
       context: .
-      dockerfile: Dockerfile.bot
-    container_name: moltchat-bot
-    environment:
-      - IRC_HOST=ircd
-      - IRC_PORT=6667
-      - BOT_NICK=MoltBot
-      - SOUL_REGISTRY_URL=http://soul-registry:8080
-    volumes:
-      - ./moltchat:/app/moltchat
-      - ./config:/app/config
-    restart: unless-stopped
+      dockerfile: Dockerfile.viewer
+    container_name: moltchat-viewer
     networks:
       - moltchat
+    restart: always
     depends_on:
       - ircd
 
-  soul-registry:
-    build:
-      context: ./soul-registry
-      dockerfile: Dockerfile
-    container_name: moltchat-soul-registry
+  web:
+    image: nginx:alpine
+    container_name: moltchat-web
     ports:
-      - "8080:8080"
-    environment:
-      - DATABASE_URL=sqlite:///data/souls.db
+      - "80:80"
+      - "443:443"
     volumes:
-      - soul_data:/data
-    restart: unless-stopped
+      - ./public:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    restart: always
     networks:
       - moltchat
-
-volumes:
-  ircd_data:
-  soul_data:
+    depends_on:
+      - viewer
 
 networks:
   moltchat:
