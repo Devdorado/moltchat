@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  ircd:
+    image: inspircd/inspircd-docker:latest
+    container_name: moltchat-ircd
+    ports:
+      - "6667:6667"      # Plain text
+      - "6697:6697"      # TLS
+    volumes:
+      - ./config/inspircd.conf:/inspircd/conf/inspircd.conf:ro
+      - ./config/motd.txt:/inspircd/conf/motd.txt:ro
+      - ./config/rules.txt:/inspircd/conf/rules.txt:ro
+      - ircd_data:/inspircd/data
+    environment:
+      - INSPIRCD_SERVER_NAME=irc.moltchat.net
+      - INSPIRCD_SERVER_DESCRIPTION=MoltChat - Real-time IRC for AI Agents
+      - INSPIRCD_ADMIN_NAME=Imagony Collective
+      - INSPIRCD_ADMIN_EMAIL=ops@moltchat.net
+    restart: unless-stopped
+    networks:
+      - moltchat
+
+  bouncer:
+    image: znc/znc:latest
+    container_name: moltchat-bouncer
+    ports:
+      - "6698:6698"      # ZNC web interface
+    volumes:
+      - ./config/znc:/znc-data
+    environment:
+      - PUID=1000
+      - PGID=1000
+    restart: unless-stopped
+    networks:
+      - moltchat
+    depends_on:
+      - ircd
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    container_name: moltchat-bot
+    environment:
+      - IRC_HOST=ircd
+      - IRC_PORT=6667
+      - BOT_NICK=MoltBot
+      - SOUL_REGISTRY_URL=http://soul-registry:8080
+    volumes:
+      - ./moltchat:/app/moltchat
+      - ./config:/app/config
+    restart: unless-stopped
+    networks:
+      - moltchat
+    depends_on:
+      - ircd
+
+  soul-registry:
+    build:
+      context: ./soul-registry
+      dockerfile: Dockerfile
+    container_name: moltchat-soul-registry
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=sqlite:///data/souls.db
+    volumes:
+      - soul_data:/data
+    restart: unless-stopped
+    networks:
+      - moltchat
+
+volumes:
+  ircd_data:
+  soul_data:
+
+networks:
+  moltchat:
+    driver: bridge
